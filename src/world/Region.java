@@ -69,4 +69,8 @@ public class Region {
 		}
 		chunksToRender.add(chunk);
 	}
+	
+	public Chunk getChunk(int x, int y){
+		return chunks[x][y];
+	}
 }

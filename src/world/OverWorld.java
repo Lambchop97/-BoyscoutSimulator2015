@@ -97,4 +97,41 @@ public class OverWorld {
 			r.update();
 		}
 	}
+	
+	public Tile getTile(float x, float y){
+		// will crash till i handle entities moving outside of loaded regions
+		int ix = ((int) x);
+		int iy = ((int) y);
+		int rx = ix / Tile.SIZE / Chunk.TILES_IN_CHUNK / Region.CHUNKS_IN_REGION;
+		int ry = iy / Tile.SIZE / Chunk.TILES_IN_CHUNK / Region.CHUNKS_IN_REGION;
+		if(ix<0){
+			rx--;
+		}
+		if(iy < 0){
+			ry--;
+		}
+		int i = 0;
+		for(Region r: knownRegions){
+			if(r.regionX == rx && r.regionY == ry){
+				break;
+			}
+			i++;
+		}
+		if(i == knownRegions.size()){
+			return Tile.tiles[0];
+		}
+		int cx = Math.abs(ix / Tile.SIZE / Chunk.TILES_IN_CHUNK % Region.CHUNKS_IN_REGION);
+		int cy = Math.abs(iy / Tile.SIZE / Chunk.TILES_IN_CHUNK % Region.CHUNKS_IN_REGION);
+		int tx = Math.abs(ix / Tile.SIZE % Chunk.TILES_IN_CHUNK);
+		int ty = Math.abs(iy / Tile.SIZE % Chunk.TILES_IN_CHUNK);
+		if(ix < 0 && iy < 0){
+			return knownRegions.get(i).getChunk(Region.CHUNKS_IN_REGION - 1 - cx, Region.CHUNKS_IN_REGION - 1 - cy).getTile(Chunk.TILES_IN_CHUNK - 1 - tx, Chunk.TILES_IN_CHUNK - 1 - ty);			
+		} else if(iy < 0){
+			return knownRegions.get(i).getChunk(cx, Region.CHUNKS_IN_REGION - 1 - cy).getTile(tx, Chunk.TILES_IN_CHUNK - 1 - ty);
+		} else if(ix < 0){
+			return knownRegions.get(i).getChunk(Region.CHUNKS_IN_REGION - 1 - cx, cy).getTile(Chunk.TILES_IN_CHUNK - 1 - tx, ty);
+		} else {
+			return knownRegions.get(i).getChunk(cx, cy).getTile(tx, ty);
+		}
+	}
 }

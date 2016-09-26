@@ -76,4 +76,8 @@ public class Animation implements Renderable{
 		}
 		return false;	
 	}
+	
+	public Sprite getFrame(){
+		return sprites[frame];
+	}
 }

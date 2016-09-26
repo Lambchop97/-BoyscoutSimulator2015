@@ -4,34 +4,52 @@ import java.awt.Rectangle;
 
 import display.GameDisplay;
 import display.Screen;
+import entity.Entity;
+import entitycomponent.AnimationComponent;
 import graphics.ArtManager;
 import graphics.Font;
 import graphics.Sprite;
 import userInput.BSInputHandler;
 import utility.Vector2f;
+import world.Tile;
 
 public class PlayerGUI extends UIComponent{
 
-	private Sprite player;
+	private Sprite playerSprite;
 	private Sprite base;
+	private Entity player;
 	private int health;
 	private int mana;
 	private int exp;
 	private boolean leftPressedLastUpdate;
 	
-	public PlayerGUI(Vector2f position){
+	//locate entity function variables
+	private int reset;
+	private int clicks;
+	private boolean clicked;
+	
+	// tile on background
+	private Tile background;
+	
+	public PlayerGUI(Vector2f position, Entity player){
 		super(position, 100, 50);
 		health = 0;
 		mana = 0;
 		exp = 0;
-		player = new Sprite(ArtManager.terrainSpriteSheet, 2 * 32, 11 * 32, 32, 32);
+		playerSprite = new Sprite(ArtManager.terrainSpriteSheet, 2 * 32, 11 * 32, 32, 32);
 		base = new Sprite(ArtManager.basePlayerGUISpriteSheet, 0, 0, 100, 50);
+		this.player = player;
 		leftPressedLastUpdate = false;
+		reset = 0;
+		clicks = 0;
+		clicked = false;
+		background = Tile.tiles[0];
 	}
 
 	public void render(Screen screen) {
 		screen.render(base, new Vector2f(position.x + GameDisplay.camera.offset.x, position.y + GameDisplay.camera.offset.y));
-		screen.render(player, new Vector2f(position.x + 1 + GameDisplay.camera.offset.x, position.y + 1 + GameDisplay.camera.offset.y));
+		background.render(screen, new Vector2f(position.x + 1 + GameDisplay.camera.offset.x, position.y + 1 + GameDisplay.camera.offset.y));
+		screen.render(playerSprite, new Vector2f(position.x + 1 + GameDisplay.camera.offset.x, position.y + 1 + GameDisplay.camera.offset.y));
 		bar6515[health].changeColor(0xff404040, 0xff00b600);
 		bar6515[health].changeColor(0xff808080, 0x004ac100);
 		screen.render(bar6515[health], new Vector2f(position.x + 34 + GameDisplay.camera.offset.x, position.y + 1 + GameDisplay.camera.offset.y));
@@ -57,14 +75,45 @@ public class PlayerGUI extends UIComponent{
 	}
 
 	public void update(BSInputHandler input) {
-		Rectangle mouse = new Rectangle(input.mouse.x, input.mouse.y, 1, 1);
-		Rectangle gui = new Rectangle((int) ((position.x) * (GameDisplay.frame().getContentPane().getSize().width / GameDisplay.MAX_WIDTH)), (int) ((position.y) * (GameDisplay.frame().getContentPane().getSize().height / GameDisplay.MAX_HEIGHT)), (int) (width * GameDisplay.SCALE * ((float) GameDisplay.frame().getContentPane().getSize().width / GameDisplay.MAX_WIDTH)), (int) (height * GameDisplay.SCALE * ((float) GameDisplay.frame().getContentPane().getSize().height / GameDisplay.MAX_HEIGHT)));//-1-3
-
+		Rectangle mouse = new Rectangle(GameDisplay.instance().getBSCursor().x, GameDisplay.instance().getBSCursor().y, 1, 1);
+		Rectangle gui = new Rectangle((int) position.x, (int) position.y, width, height);//-1-3
+		if(player.hasComponent("AnimationComponent")){
+			playerSprite = ((AnimationComponent) player.getComponent("AnimationComponent")).getAnimation().getFrame();
+			
+		}
 		if(mouse.intersects(gui)){
+			GameDisplay.overGui = true;
 			if(!leftPressedLastUpdate && input.mouse.leftButton){
 				GameDisplay.onUi = true;				
 			}
+			Rectangle sprite = new Rectangle((int) position.x + 1, (int) position.y + 1, 32, 32);
+			if(mouse.intersects(sprite)){
+				if(input.mouse.leftButton && !clicked){
+					clicked = true;
+					reset = 10;
+					clicks++;
+				}
+				if(!input.mouse.leftButton && clicked){
+					clicked = false;
+				}
+				if(clicks == 2){
+					GameDisplay.camera.move(new Vector2f(player.getPosition().x - GameDisplay.camera.offset.x - GameDisplay.instance().width/6 + 16, player.getPosition().y - GameDisplay.camera.offset.y - GameDisplay.instance().height/6 + 16));
+					reset = 0;
+					clicks = 0;
+				}
+				if(reset > 0){
+					reset--;					
+				} else {
+					clicks = 0;
+				}
+			} else {
+				clicks = 0;
+				reset = 0;
+				clicked = false;
+			}
 		}
+		
+		background = GameDisplay.instance().getWorld().getTile(player.getPosition().x, player.getPosition().y);
 		
 		if(!leftPressedLastUpdate && input.mouse.leftButton){
 			leftPressedLastUpdate = true;

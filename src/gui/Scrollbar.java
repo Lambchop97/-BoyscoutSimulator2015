@@ -34,26 +34,27 @@ public class Scrollbar extends UIComponent{
 	public void update(BSInputHandler input){
 		if((input.mouse.leftButton && !lastTickLeftClick) || hashtagFreePass){
 			if(!clicked){
-				Rectangle mouse = new Rectangle(input.mouse.x, input.mouse.y, 1, 1);
+				Rectangle mouse = new Rectangle(GameDisplay.instance().getBSCursor().x, GameDisplay.instance().getBSCursor().y, 1, 1);
 				Rectangle slider;
 				if(horizontal){
-					slider = new Rectangle((int) ((position.x + delta.x) * GameDisplay.frame().getContentPane().getSize().width), (int) ((position.y + delta.y) * GameDisplay.frame().getContentPane().getSize().height), (int) (45 * ((float) GameDisplay.instance().width / GameDisplay.MAX_WIDTH)), (int) (33 * ((float) GameDisplay.instance().height / GameDisplay.MAX_HEIGHT)));//-1-3
+					slider = new Rectangle((int) ((position.x + delta.x) * GameDisplay.MAX_WIDTH / GameDisplay.SCALE), (int) ((position.y + delta.y) * GameDisplay.MAX_HEIGHT / GameDisplay.SCALE), 15, 11);//-1-3
 				} else {
-					slider = new Rectangle((int) ((position.x + delta.x) * GameDisplay.frame().getContentPane().getSize().width), (int) ((position.y + delta.y) * GameDisplay.frame().getContentPane().getSize().height), (int) (33 * ((float) GameDisplay.instance().width / GameDisplay.MAX_WIDTH)), (int) (45 * ((float) GameDisplay.instance().height / GameDisplay.MAX_HEIGHT)));
+					slider = new Rectangle((int) ((position.x + delta.x) * GameDisplay.MAX_WIDTH / GameDisplay.SCALE), (int) ((position.y + delta.y) * GameDisplay.MAX_HEIGHT / GameDisplay.SCALE), 11, 15);
 				}
 				
 				if(slider.intersects(mouse)){
 					clicked = true;
-					mouseX = input.mouse.x;
-					mouseY = input.mouse.y;
+					mouseX = GameDisplay.instance().getBSCursor().x;
+					mouseY = GameDisplay.instance().getBSCursor().y;
 					hashtagFreePass = true;
-					deltaMouseX = (mouseX - ((position.x + delta.x) * GameDisplay.frame().getContentPane().getSize().width)) / GameDisplay.instance().width;
-					deltaMouseY = (mouseY - ((position.y + delta.y) * GameDisplay.frame().getContentPane().getSize().height)) / GameDisplay.instance().height;
+					deltaMouseX = (mouseX - ((position.x + delta.x) * GameDisplay.MAX_WIDTH / GameDisplay.SCALE)) / (GameDisplay.MAX_WIDTH / GameDisplay.SCALE);
+					deltaMouseY = (mouseY - ((position.y + delta.y) * GameDisplay.MAX_HEIGHT / GameDisplay.SCALE)) / (GameDisplay.MAX_HEIGHT / GameDisplay.SCALE);
+					GameDisplay.onUi = true;
 				}				
 			} else {
 				if(horizontal){
-					if(input.mouse.x != mouseX){
-						delta.x = ((float) input.mouse.x / GameDisplay.frame().getContentPane().getSize().width) - position.x - deltaMouseX;
+					if(GameDisplay.instance().getBSCursor().x != mouseX){
+						delta.x = ((float) GameDisplay.instance().getBSCursor().x / (GameDisplay.MAX_WIDTH / GameDisplay.SCALE)) - position.x - deltaMouseX;
 						
 						if(delta.x > length){
 							delta.x = length;
@@ -63,8 +64,8 @@ public class Scrollbar extends UIComponent{
 						}
 					}
 				} else {
-					if(input.mouse.y != mouseY){
-						delta.y = ((float) input.mouse.y / GameDisplay.frame().getContentPane().getSize().height) - position.y - deltaMouseY;
+					if(GameDisplay.instance().getBSCursor().y != mouseY){
+						delta.y = ((float) GameDisplay.instance().getBSCursor().y / (GameDisplay.MAX_HEIGHT / GameDisplay.SCALE)) - position.y - deltaMouseY;
 
 						if(delta.y > length){
 							delta.y = length;
@@ -112,6 +113,10 @@ public class Scrollbar extends UIComponent{
 		} else {			
 			return (float) (delta.y);
 		}
+	}
+	
+	public float getLength(){
+		return length;
 	}
 	
 	public void setHorizontal(boolean horizontal){

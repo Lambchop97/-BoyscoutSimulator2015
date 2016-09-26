@@ -20,6 +20,8 @@ import display.GameDisplay;
  */
 public class Logger {
 
+	//TODO: BS exceptions and make sure they report deadly crashes and shut the logger down, crash logging
+	
 	/**
 	 * The file into which the logs are inserted.
 	 */

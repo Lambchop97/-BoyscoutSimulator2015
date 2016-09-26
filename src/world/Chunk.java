@@ -58,6 +58,14 @@ public class Chunk {
 		} 
 		return val;
 	}
+	
+	public Tile getTile(int x, int y){
+		if(tiles[x][y] == null){
+			return Tile.tiles[0];
+		} else {
+			return tiles[x][y];			
+		}
+	}
 }
 
 

@@ -61,4 +61,8 @@ public class AnimationComponent implements Component{
 	public COMPONENT_TYPE getComponentType() {
 		return COMPONENT_TYPE.animation_component;
 	}
+	
+	public Animation getAnimation(){
+		return currentAnimation;
+	}
 }

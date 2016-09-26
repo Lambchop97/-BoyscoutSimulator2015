@@ -1,17 +1,21 @@
 package display;
 
 import java.awt.Canvas;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferStrategy;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JFrame;
 
 import camera.Camera;
+import cursor.BSCursor;
 import debug.DebugDisplay;
 import debug.Logger;
 import entity.Crab;
@@ -23,6 +27,7 @@ import gui.Button;
 import gui.PlayerGUI;
 import gui.ResponseBox;
 import gui.UIComponent;
+import gui.Scrollbar;
 import thread.ThreadManager;
 import userInput.BSInputHandler;
 import userInput.Control;
@@ -90,6 +95,8 @@ public class GameDisplay extends Canvas implements Runnable {
 	 */
 	private boolean running = false;
 	
+	public static boolean overGui = false;
+	public static boolean resizing = false;
 	/**
 	 * click and drag variables
 	 */
@@ -106,16 +113,18 @@ public class GameDisplay extends Canvas implements Runnable {
 	public static Generator generator;
 	private static GameDisplay game;	
 	private Screen screen;
+	private BSCursor cur;
 	
 	/**
 	 *  Test objects
 	 */
 	private List<Entity> ents;
-	private Button butt;
+	public Button butt;
 	private boolean placed;
 	private boolean placin = false;
 	private ResponseBox rb;
 	private PlayerGUI gui;
+	private Scrollbar bar;
 	
 	
 	/**
@@ -155,6 +164,12 @@ public class GameDisplay extends Canvas implements Runnable {
 				closeWindow();
 			}
 		});
+		
+		 Toolkit toolkit = Toolkit.getDefaultToolkit();
+		 Point hotSpot = new Point(0,0);
+		 BufferedImage cursorImage = new BufferedImage(1, 1, BufferedImage.TRANSLUCENT); 
+		 Cursor invisibleCursor = toolkit.createCustomCursor(cursorImage, hotSpot, "InvisibleCursor");        
+		 setCursor(invisibleCursor);
 
 		//initialize all other Classes that need to be initialized
 		Logger.init();
@@ -168,16 +183,19 @@ public class GameDisplay extends Canvas implements Runnable {
 		camera = new Camera(new Vector2f(0,0));
 		generator = new Generator();
 		world = new OverWorld();
+		cur = BSCursor.createDefaultCursor();
 		
+		cur.setSensitivity(2);
 		//Test objects
 		ents = new ArrayList<Entity>();
 		for(int i = 0; i < 1; i++){
 			ents.add(new TestEntity(new Vector2f(100f,i * 32f)));			
 		}
-		butt = new Button(new Vector2f(.2f, .2f), "Fangrilla");
+		butt = new Button(new Vector2f(.175f, .04f), "Fangrilla");
 		rb = new ResponseBox(new Vector2f(.3f, .3f), "Are you sure?");
-		gui = new PlayerGUI(new Vector2f(5f, 5f));
-		
+		gui = new PlayerGUI(new Vector2f(5f, 5f), ents.get(0));
+		bar = new Scrollbar(.125f, new Vector2f(.175f, .1f));
+		bar.setHorizontal(true);
 		//start game loop
 		this.start();
 	}
@@ -251,18 +269,6 @@ public class GameDisplay extends Canvas implements Runnable {
 	 */
 	public void update() {
 		Control.update(input);
-		if(Control.getControlFromName("Up").isPressed()){
-			camera.move(new Vector2f(0, -10));
-		}
-		if(Control.getControlFromName("Left").isPressed()){
-			camera.move(new Vector2f(-10, 0));
-		}
-		if(Control.getControlFromName("Down").isPressed()){
-			camera.move(new Vector2f(0, 10));
-		}
-		if(Control.getControlFromName("Right").isPressed()){
-			camera.move(new Vector2f(10, 0));
-		}
 		if(input.keyboard.isKeyPressed(KeyEvent.VK_ESCAPE)){
 			closeWindow();
 		}
@@ -298,17 +304,24 @@ public class GameDisplay extends Canvas implements Runnable {
 		if(!input.mouse.leftButton && placed){
 			placed = false;
 		}
+		cur.update(input);
 		butt.update(input);
 		world.update();
 		DebugDisplay.update(input);
 		rb.update(input);
 		gui.update(input);
+		bar.update(input);
+		if(!bar.getClicked()){
+			cur.setSensitivity(1.0f * (bar.getValue() / bar.getLength())  + 1f);
+			butt.changeText(cur.getSensitivity() + " " + bar.getValue() / bar.getLength());
+		}
 		if(input.mouse.leftButton && !onUi && !placin){
 			if(!justClicked){
 				justClicked = true;
-				this.mouseClicked = new Vector2f((float) input.mouse.x, (float) input.mouse.y);
+				this.mouseClicked = new Vector2f((float) cur.x * SCALE, (float) cur.y * SCALE);
+				
 			}
-			Vector2f mouseNow = new Vector2f((float) input.mouse.x, (float) input.mouse.y);
+			Vector2f mouseNow = new Vector2f((float) cur.x * SCALE, (float) cur.y * SCALE);
 			mouseClicked.subtract(mouseNow);
 			if(mouseClicked.x != mouseClicked.y)
 				mouseClicked.add(0f);
@@ -333,6 +346,13 @@ public class GameDisplay extends Canvas implements Runnable {
 				panVelocity.y = 0;
 			}
 		}
+		input.mouse.dx = 0;
+		input.mouse.dy = 0;
+		if(resizing){
+			resizing = false;
+		}
+		camera.update(input);
+		overGui = false;
 	}
 
 	/**
@@ -359,8 +379,10 @@ public class GameDisplay extends Canvas implements Runnable {
 		if(!DebugDisplay.toggled()){
 			gui.render(screen);			
 		}
-		//render code end
 		
+		bar.render(screen);
+		cur.render(screen);
+		//render code end
 		
 		g.drawImage(screen.image, 0, 0, getWidth(), getHeight(), null); //draws the screen into the BufferStrategy
 		DebugDisplay.render(g); // draws the Debug display over the screen
@@ -397,11 +419,17 @@ public class GameDisplay extends Canvas implements Runnable {
 	 * @param height The desired height of the frame
 	 */
 	public void resizeWindow(int width, int height){
+		resizing = true;
+		// Check to make sure the new height and width are within the screen size and not the same as the current ones.
 		if(width > MAX_WIDTH || height > MAX_HEIGHT) return;
 		if(width == this.width && height == this.height) return;
+		
+		// Get rid of frame to free resources.
 		frame.dispose();
+		
+		// Set up the frame.
 		frame = new JFrame(TITLE + " v" + VERSION);
-		if(width == MAX_WIDTH && height == MAX_HEIGHT){
+		if(width == MAX_WIDTH && height == MAX_HEIGHT){ // Check for fullscreen.
 			frame.setUndecorated(true); 
 		} else {
 			frame.setUndecorated(false);
@@ -413,7 +441,6 @@ public class GameDisplay extends Canvas implements Runnable {
 		frame.setFocusable(true);
 		frame.add(this);
 		
-		input = new BSInputHandler(this);
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		this.requestFocus();
@@ -426,6 +453,8 @@ public class GameDisplay extends Canvas implements Runnable {
 				closeWindow();
 			}
 		});
+		
+		// Update width and height.
 		this.width = width;
 		this.height = height;
 	}
@@ -461,5 +490,13 @@ public class GameDisplay extends Canvas implements Runnable {
 	 */
 	public boolean isRunning(){
 		return running;
+	}
+	
+	public OverWorld getWorld(){
+		return world;
+	}
+	
+	public BSCursor getBSCursor(){
+		return cur;
 	}
 }

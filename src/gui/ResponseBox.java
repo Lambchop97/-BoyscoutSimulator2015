@@ -66,17 +66,18 @@ public class ResponseBox extends UIComponent{
 
 	public void update(BSInputHandler input) {
 		if(!answered){
-			Rectangle mouse = new Rectangle(input.mouse.x, input.mouse.y, 1, 1);
-			Rectangle box = new Rectangle((int) ((position.x) * GameDisplay.frame().getContentPane().getSize().width), (int) ((position.y) * GameDisplay.frame().getContentPane().getSize().height), (int) (141 * GameDisplay.SCALE * ((float) GameDisplay.instance().width / GameDisplay.MAX_WIDTH)), (int) (140 * GameDisplay.SCALE * ((float) GameDisplay.instance().height / GameDisplay.MAX_HEIGHT)));
+			Rectangle mouse = new Rectangle(GameDisplay.instance().getBSCursor().x, GameDisplay.instance().getBSCursor().y, 1, 1);
+			Rectangle box = new Rectangle((int) (position.x * GameDisplay.MAX_WIDTH / GameDisplay.SCALE), (int) (position.y * GameDisplay.MAX_HEIGHT / GameDisplay.SCALE), 141, 140);
 			
 			if(mouse.intersects(box)){
+				GameDisplay.overGui = true;
 				if(!leftPressedLastUpdate && input.mouse.leftButton){
 					GameDisplay.onUi = true;	
-					Rectangle top = new Rectangle((int) ((position.x) * GameDisplay.frame().getContentPane().getSize().width), (int) ((position.y) * GameDisplay.frame().getContentPane().getSize().height), (int) (141 * GameDisplay.SCALE * ((float) GameDisplay.instance().width / GameDisplay.MAX_WIDTH)), (int) (21 * GameDisplay.SCALE * ((float) GameDisplay.instance().height / GameDisplay.MAX_HEIGHT)));
+					Rectangle top = new Rectangle((int) (position.x * GameDisplay.MAX_WIDTH / GameDisplay.SCALE), (int) (position.y * GameDisplay.MAX_HEIGHT / GameDisplay.SCALE), 141, 21);
 					if(mouse.intersects(top)){
 						canDrag = true;
-						xDiff = (int) ((position.x) * GameDisplay.frame().getContentPane().getSize().width) - input.mouse.x;
-						yDiff = (int) ((position.y) * GameDisplay.frame().getContentPane().getSize().height) - input.mouse.y;
+						xDiff = (int) (position.x * GameDisplay.MAX_WIDTH / GameDisplay.SCALE) - GameDisplay.instance().getBSCursor().x;
+						yDiff = (int) (position.y * GameDisplay.MAX_HEIGHT / GameDisplay.SCALE) - GameDisplay.instance().getBSCursor().y;
 					}
 					hasFocus = true;
 					if(compWithFocus == null){
@@ -102,7 +103,7 @@ public class ResponseBox extends UIComponent{
 			}
 			
 			if(canDrag){
-				position = new Vector2f((float) (input.mouse.x + xDiff) / GameDisplay.frame().getContentPane().getSize().width, (float) (input.mouse.y + yDiff) / GameDisplay.frame().getContentPane().getSize().height);
+				position = new Vector2f((float) (GameDisplay.instance().getBSCursor().x + xDiff) / GameDisplay.MAX_WIDTH * GameDisplay.SCALE, (float) (GameDisplay.instance().getBSCursor().y + yDiff) / GameDisplay.MAX_HEIGHT * GameDisplay.SCALE);
 				ok.move(new Vector2f(position.x + .195f, position.y + .328f));
 				
 			}

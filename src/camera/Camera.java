@@ -1,6 +1,11 @@
 package camera;
 
+import java.awt.Rectangle;
+
+import display.GameDisplay;
 import entity.Entity;
+import userInput.BSInputHandler;
+import userInput.Control;
 import utility.Vector2f;
 
 /**
@@ -52,5 +57,45 @@ public class Camera extends Entity{
 	 */
 	public Vector2f getActualOffset(){
 		return new Vector2f(actualOffset.x, actualOffset.y);
+	}
+	
+	public void update(BSInputHandler input){
+		if(!GameDisplay.overGui && !GameDisplay.onUi){
+			Rectangle mouse = new Rectangle(GameDisplay.instance().getBSCursor().x - 4, GameDisplay.instance().getBSCursor().y - 4, 1, 1);
+			Rectangle top = new Rectangle(0, -50, GameDisplay.MAX_WIDTH / GameDisplay.SCALE, 80);
+			Rectangle bottom = new Rectangle(0, GameDisplay.MAX_HEIGHT / GameDisplay.SCALE - 30, GameDisplay.MAX_WIDTH / GameDisplay.SCALE, 80);
+			Rectangle left = new Rectangle(-50, 0, 80, GameDisplay.MAX_HEIGHT / GameDisplay.SCALE);
+			Rectangle right  = new Rectangle(GameDisplay.MAX_WIDTH / GameDisplay.SCALE - 30, 0, 80, GameDisplay.MAX_HEIGHT / GameDisplay.SCALE);
+			
+			if(mouse.intersects(top)){
+				GameDisplay.instance().butt.changeText("Top");
+				move(new Vector2f(0, (-34 + GameDisplay.instance().getBSCursor().y) / 2));
+			}
+			if(mouse.intersects(bottom)){
+				GameDisplay.instance().butt.changeText("Bottom");
+				move(new Vector2f(0, (34 - (GameDisplay.MAX_HEIGHT / GameDisplay.SCALE - GameDisplay.instance().getBSCursor().y)) / 2));
+			}
+			if(mouse.intersects(left)){
+				GameDisplay.instance().butt.changeText("Left");
+				move(new Vector2f((-34 + GameDisplay.instance().getBSCursor().x) / 2, 0));
+			}
+			if(mouse.intersects(right)){
+				GameDisplay.instance().butt.changeText("Right");
+				move(new Vector2f((34 - (GameDisplay.MAX_WIDTH / GameDisplay.SCALE - GameDisplay.instance().getBSCursor().x)) / 2, 0));
+			}			
+		}
+		if(Control.getControlFromName("Up").isPressed()){
+			move(new Vector2f(0, -10));
+		}
+		if(Control.getControlFromName("Left").isPressed()){
+			move(new Vector2f(-10, 0));
+		}
+		if(Control.getControlFromName("Down").isPressed()){
+			move(new Vector2f(0, 10));
+		}
+		if(Control.getControlFromName("Right").isPressed()){
+			move(new Vector2f(10, 0));
+		}
+		super.update(input);
 	}
 }

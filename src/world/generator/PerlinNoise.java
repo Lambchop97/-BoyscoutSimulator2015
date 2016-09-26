@@ -2,15 +2,16 @@ package world.generator;
 
 import java.util.Random;
 
-import world.Tile;
-
 public class PerlinNoise{
+	
+	//Seeds for generating the data for the specified tiles, There are 5 so there can be 5 separate noises
 	private static int seed1 = 15731;
 	private static int seed2 = 1234537;
 	private static int seed3 = 532183;
 	private static int seed4 = 2451359;
 	private static int seed5 = 7526443;
 	
+	// Five random number generators that use seeds, the 5 seeds from above
 	private static float terrainRandom1(int x){
 		x = (x << 13) ^ x;
 		return (1.0f - ((x * (x * x * seed1 + 789221) + 1376312589) & 0x7FFFFFFF) / 2147483647.0f);
@@ -38,15 +39,15 @@ public class PerlinNoise{
 	
 	
 	private static float interpolate(float a, float b, float x){
-		float ft = x * 3.1415926535f;
-		float f = (1.0f - (float) Math.cos(ft)) * .5f;
+		float ft = x * 3.1415926535f; // ft is the blend value times PI
+		float f = (1.0f - (float) Math.cos(ft)) * .5f; // f is a value between .5 and 1.0 
 		
 		return (a * (1 - f) + b * f);
 	}
 	
 	private static float generateSmoothNoise1(int x, int y, int octave){
-		float smoothNoise = 0.0f;
-		int period = 1 << octave;
+		float smoothNoise = 0.0f; 
+		int period = 1 << octave; 
 		float frequency = 1.0f / period;
 		
 		int sample0 = (x / period) * period;
@@ -339,9 +340,9 @@ public class PerlinNoise{
 		return perlinNoise;
 	}
 	
-	public Tile generateTile(int x, int y){
-		return null;
-	}
+//	public Tile generateTile(int x, int y){
+//		return null;
+//	}
 	
 	public static void seed(long seed){
 		Random r = new Random(seed);
